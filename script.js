@@ -7,6 +7,7 @@ let supabase = null;
 let categories = []; // Será preenchida do Supabase
 let products = []; // Será preenchida do Supabase
 let filteredProducts = []; // Produtos filtrados
+let currentUser = null; // Usuário autenticado
 
 // Carrinho de compras
 let cart = [];
@@ -23,6 +24,296 @@ let cartValue = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async function() {
+    // Inicializar Supabase primeiro
+    await initializeSupabase();
+    
+    // Verificar autenticação
+    await checkAuthStatus();
+    
+    // Se não estiver autenticado, mostrar tela de login
+    if (!currentUser) {
+        showAuthScreen();
+        return;
+    }
+    
+    // Se estiver autenticado, inicializar a aplicação
+    await initializeApp();
+});
+
+// Inicializar Supabase
+async function initializeSupabase() {
+    try {
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Cliente Supabase inicializado com sucesso');
+    } catch (error) {
+        console.error('Erro ao inicializar Supabase:', error);
+        showNotification('❌ Erro ao conectar com o servidor', 'error');
+    }
+}
+
+// Verificar status de autenticação
+async function checkAuthStatus() {
+    try {
+        if (!supabase) return;
+        
+        // Verificar sessão atual
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error('Erro ao verificar sessão:', error);
+            return;
+        }
+        
+        if (session) {
+            try {
+                // Verificar se o usuário está na lista de usuários autorizados
+                let authorizedUser = null;
+                
+                // Primeira tentativa: com RLS habilitado
+                const { data: authData, error: authError } = await supabase
+                    .from('authorized_users')
+                    .select('*')
+                    .eq('email', session.user.email)
+                    .eq('is_active', true)
+                    .single();
+                
+                if (authError) {
+                    console.error('Erro ao verificar autorização com RLS:', authError);
+                    
+                    // Se falhar com RLS, tentar uma abordagem alternativa
+                    try {
+                        // Verificar se o usuário existe na tabela (sem RLS)
+                        const { data: fallbackUser, error: fallbackError } = await supabase
+                            .from('authorized_users')
+                            .select('*')
+                            .eq('email', session.user.email)
+                            .eq('is_active', true)
+                            .maybeSingle();
+                        
+                        if (fallbackError) {
+                            console.error('Erro no fallback:', fallbackError);
+                            throw new Error('Falha na verificação de autorização');
+                        }
+                        
+                        if (!fallbackUser) {
+                            throw new Error('Usuário não encontrado na lista de autorizados');
+                        }
+                        
+                        authorizedUser = fallbackUser;
+                        console.log('Usuário autorizado via fallback:', authorizedUser);
+                        
+                    } catch (fallbackError) {
+                        console.error('Falha no fallback:', fallbackError);
+                        await supabase.auth.signOut();
+                        return;
+                    }
+                } else {
+                    authorizedUser = authData;
+                    console.log('Usuário autorizado via RLS:', authorizedUser);
+                }
+                
+                if (!authorizedUser) {
+                    console.log('Usuário não autorizado:', session.user.email);
+                    await supabase.auth.signOut();
+                    return;
+                }
+                
+                currentUser = {
+                    id: session.user.id,
+                    email: session.user.email,
+                    name: authorizedUser.name,
+                    role: authorizedUser.role
+                };
+                
+                // Atualizar último login (com tratamento de erro)
+                try {
+                    await supabase
+                        .from('authorized_users')
+                        .update({ last_login: new Date().toISOString() })
+                        .eq('id', authorizedUser.id);
+                } catch (updateError) {
+                    console.warn('Erro ao atualizar último login:', updateError);
+                    // Não falhar se não conseguir atualizar o último login
+                }
+                
+                console.log('Usuário autenticado com sucesso:', currentUser);
+            } catch (error) {
+                console.error('Erro crítico ao verificar autenticação:', error);
+                await supabase.auth.signOut();
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+    }
+}
+
+// Mostrar tela de autenticação
+function showAuthScreen() {
+    // Ocultar conteúdo principal
+    const mainContent = document.querySelector('.container');
+    if (mainContent) {
+        mainContent.style.display = 'none';
+    }
+    
+    // Criar tela de autenticação
+    const authScreen = document.createElement('div');
+    authScreen.className = 'auth-screen';
+    authScreen.id = 'authScreen';
+    
+    authScreen.innerHTML = `
+        <div class="auth-container">
+            <div class="auth-logo">
+                <i class="fas fa-bread-slice"></i>
+                <h1>Padaria Artesanal</h1>
+            </div>
+            
+            <div class="auth-form-container">
+                <h2>🔐 Acesso Restrito</h2>
+                <p>Faça login para acessar o sistema PDV</p>
+                
+                <form class="auth-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email:</label>
+                        <input type="email" id="loginEmail" placeholder="seu-email@exemplo.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Senha:</label>
+                        <input type="password" id="loginPassword" placeholder="Sua senha" required>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Entrar no Sistema
+                    </button>
+                </form>
+                
+                <div class="auth-footer">
+                    <p>⚠️ Apenas usuários autorizados podem acessar este sistema</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(authScreen);
+    
+    // Focar no campo de email
+    setTimeout(() => {
+        document.getElementById('loginEmail').focus();
+    }, 100);
+}
+
+// Função de login
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (!email || !password) {
+        showNotification('❌ Preencha todos os campos!', 'error');
+        return;
+    }
+    
+    // Desabilitar botão durante o login
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+    
+    try {
+        if (!supabase) {
+            throw new Error('Cliente Supabase não inicializado');
+        }
+        
+        // Fazer login no Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        
+        if (error) {
+            throw error;
+        }
+        
+        if (data.user) {
+            // Verificar se o usuário está autorizado
+            const { data: authorizedUser, error: authError } = await supabase
+                .from('authorized_users')
+                .select('*')
+                .eq('email', email)
+                .eq('is_active', true)
+                .single();
+            
+            if (authError || !authorizedUser) {
+                await supabase.auth.signOut();
+                throw new Error('Usuário não autorizado para acessar este sistema');
+            }
+            
+            // Login bem-sucedido
+            currentUser = {
+                id: data.user.id,
+                email: data.user.email,
+                name: authorizedUser.name,
+                role: authorizedUser.role
+            };
+            
+            // Atualizar último login
+            await supabase
+                .from('authorized_users')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', authorizedUser.id);
+            
+            showNotification(`✅ Bem-vindo, ${currentUser.name}!`, 'success');
+            
+            // Remover tela de autenticação e inicializar app
+            setTimeout(() => {
+                const authScreen = document.getElementById('authScreen');
+                if (authScreen) {
+                    document.body.removeChild(authScreen);
+                }
+                
+                const mainContent = document.querySelector('.container');
+                if (mainContent) {
+                    mainContent.style.display = 'block';
+                }
+                
+                initializeApp();
+            }, 1000);
+            
+        } else {
+            throw new Error('Dados de login inválidos');
+        }
+        
+    } catch (error) {
+        console.error('Erro no login:', error);
+        
+        let errorMessage = 'Erro ao fazer login';
+        if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Email ou senha incorretos';
+        } else if (error.message.includes('not authorized')) {
+            errorMessage = 'Usuário não autorizado para acessar este sistema';
+        } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Email não confirmado. Verifique sua caixa de entrada';
+        }
+        
+        showNotification(`❌ ${errorMessage}`, 'error');
+        
+        // Limpar senha em caso de erro
+        passwordInput.value = '';
+        passwordInput.focus();
+    } finally {
+        // Reabilitar botão
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
+    }
+}
+
+// Inicializar aplicação após autenticação
+async function initializeApp() {
     // Inicializar elementos DOM
     categoriesGrid = document.getElementById('categoriesGrid');
     productsGrid = document.getElementById('productsGrid');
@@ -33,9 +324,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     cartItems = document.getElementById('cartItems');
     cartValue = document.getElementById('cartValue');
     
-
+    // Adicionar informações do usuário no header
+    addUserInfoToHeader();
     
-    await initializeSupabase();
+    // Carregar dados
     await loadCategoriesFromSupabase();
     await loadProductsFromSupabase();
     renderProducts();
@@ -53,26 +345,78 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (clearSearchBtn) {
         clearSearchBtn.addEventListener('click', clearSearch);
     }
-});
+}
 
-// Inicializar Supabase
-async function initializeSupabase() {
+// Adicionar informações do usuário no header
+function addUserInfoToHeader() {
+    const header = document.querySelector('.header');
+    if (!header || !currentUser) return;
+    
+    // Limpar controles de usuário existentes antes de adicionar novos
+    const existingUserControls = header.querySelectorAll('.user-controls');
+    existingUserControls.forEach(control => control.remove());
+    
+    const userControls = document.createElement('div');
+    userControls.className = 'user-controls';
+    userControls.id = 'userControls';
+    
+    userControls.innerHTML = `
+        <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span>${currentUser.name}</span>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Sair
+        </button>
+    `;
+    
+    header.appendChild(userControls);
+}
+
+// Função de logout
+async function handleLogout() {
     try {
-        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('Cliente Supabase inicializado com sucesso');
+        if (supabase) {
+            await supabase.auth.signOut();
+        }
+        
+        // Limpar dados locais
+        currentUser = null;
+        categories = [];
+        products = [];
+        filteredProducts = [];
+        cart = [];
+        
+        // Limpar interface
+        if (categoriesGrid) categoriesGrid.innerHTML = '';
+        if (productsGrid) productsGrid.innerHTML = '';
+        
+        // Limpar controles de usuário do header
+        const userControls = document.querySelector('#userControls');
+        if (userControls) {
+            userControls.remove();
+        }
+        
+        // Também limpar por classe (backup)
+        const allUserControls = document.querySelectorAll('.user-controls');
+        allUserControls.forEach(control => control.remove());
+        
+        showNotification('👋 Logout realizado com sucesso!', 'success');
+        
+        // Redirecionar para tela de login
+        setTimeout(() => {
+            const mainContent = document.querySelector('.container');
+            if (mainContent) {
+                mainContent.style.display = 'none';
+            }
+            
+            showAuthScreen();
+        }, 1000);
+        
     } catch (error) {
-        console.error('Erro ao inicializar Supabase:', error);
-        // Fallback para dados hard-coded se houver erro
-        categories = [
-            { id: 1, name: 'Pães Artesanais', icon: 'fas fa-bread-slice', color: '#8B4513' },
-            { id: 2, name: 'Doces e Confeitaria', icon: 'fas fa-cake-candles', color: '#FF69B4' },
-            { id: 3, name: 'Salgados', icon: 'fas fa-pizza-slice', color: '#FF6347' },
-            { id: 4, name: 'Bebidas', icon: 'fas fa-coffee', color: '#8B4513' },
-            { id: 5, name: 'Especiais', icon: 'fas fa-star', color: '#FFD700' },
-            { id: 6, name: 'Sem Glúten', icon: 'fas fa-leaf', color: '#32CD32' }
-        ];
-        renderCategories();
+        console.error('Erro no logout:', error);
+        showNotification('❌ Erro ao fazer logout', 'error');
     }
 }
 
@@ -240,17 +584,57 @@ function renderCategories() {
     categories.forEach(category => {
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
+        categoryCard.dataset.categoryId = category.id;
         
         // Usar os dados do Supabase (icon e color)
         const iconClass = category.icon || 'fas fa-bread-slice';
         const iconColor = category.color || '#8B4513';
         
+        // Detectar se é dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const editHint = isMobile ? 'Duplo-toque para editar' : 'Duplo-clique para editar';
+        
         categoryCard.innerHTML = `
             <i class="${iconClass}" style="color: ${iconColor}"></i>
             <h3>${category.name}</h3>
+            <div class="category-edit-hint">${editHint}</div>
         `;
         
+        // Adicionar event listeners para click (filtro) e double-click (edição)
         categoryCard.addEventListener('click', () => filterByCategory(category.name));
+        
+        // Adicionar double-click para edição
+        categoryCard.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Feedback visual
+            categoryCard.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                categoryCard.style.transform = 'scale(1)';
+            }, 150);
+            showEditCategoryModal(category);
+        });
+        
+        // Adicionar suporte para double-tap em dispositivos móveis
+        let lastTap = 0;
+        categoryCard.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 500 && tapLength > 0) {
+                // Double-tap detectado
+                e.preventDefault();
+                e.stopPropagation();
+                // Feedback visual
+                categoryCard.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    categoryCard.style.transform = 'scale(1)';
+                }, 150);
+                showEditCategoryModal(category);
+            }
+            lastTap = currentTime;
+        });
+        
         categoriesGrid.appendChild(categoryCard);
     });
 }
@@ -324,10 +708,15 @@ function closeAddCategoryModal() {
 // Event listener para fechar modal ao clicar fora
 document.addEventListener('click', function(event) {
     const categoryModal = document.getElementById('addCategoryModal');
+    const editCategoryModal = document.getElementById('editCategoryModal');
     const productModal = document.getElementById('addProductModal');
     
     if (categoryModal && event.target === categoryModal) {
         closeAddCategoryModal();
+    }
+    
+    if (editCategoryModal && event.target === editCategoryModal) {
+        closeEditCategoryModal();
     }
     
     if (productModal && event.target === productModal) {
@@ -339,9 +728,13 @@ document.addEventListener('click', function(event) {
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         const categoryModal = document.getElementById('addCategoryModal');
+        const editCategoryModal = document.getElementById('editCategoryModal');
         const productModal = document.getElementById('addProductModal');
         if (categoryModal) {
             closeAddCategoryModal();
+        }
+        if (editCategoryModal) {
+            closeEditCategoryModal();
         }
         if (productModal) {
             closeAddProductModal();
@@ -924,6 +1317,20 @@ style.textContent = `
         background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
     }
     
+    .category-edit-hint {
+        font-size: 0.75rem;
+        color: #888;
+        text-align: center;
+        margin-top: 8px;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+    }
+    
+    .category-card:hover .category-edit-hint {
+        opacity: 1;
+        color: #667eea;
+    }
+    
     .product-category {
         color: #666;
         font-size: 0.9rem;
@@ -1197,6 +1604,240 @@ function finalizeSale() {
     closeCheckoutModal();
     updateFooter();
     renderProducts();
+}
+
+// Função para mostrar modal de editar categoria
+function showEditCategoryModal(category) {
+    const modal = document.createElement('div');
+    modal.className = 'edit-category-modal';
+    modal.id = 'editCategoryModal';
+    
+    modal.innerHTML = `
+        <div class="edit-category-modal-content">
+            <div class="edit-category-header">
+                <h2>✏️ Editar Categoria</h2>
+                <button class="close-edit-category-btn" onclick="closeEditCategoryModal()">×</button>
+            </div>
+            
+            <form class="edit-category-form" onsubmit="updateCategory(event, ${category.id})">
+                <div class="form-group">
+                    <label for="editCategoryName">Nome da Categoria:</label>
+                    <input type="text" id="editCategoryName" value="${category.name}" placeholder="Ex: Bebidas Quentes" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategoryIcon">Ícone (FontAwesome):</label>
+                    <input type="text" id="editCategoryIcon" value="${category.icon}" placeholder="Ex: fa fa-house" required>
+                    <div class="input-help">
+                        Sugestão: "fa fa-house" | 
+                        <a href="https://fontawesome.com/search?ic=free&o=r" target="_blank" rel="noopener">
+                            Consultar ícones disponíveis
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategoryColor">Cor:</label>
+                    <input type="text" id="editCategoryColor" value="${category.color}" placeholder="Ex: blue" required>
+                    <div class="input-help">
+                        Sugestão: "blue", "red", "green", "#FF6B6B", etc.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Preview:</label>
+                    <div class="category-preview" id="categoryPreview">
+                        <i class="${category.icon}" style="color: ${category.color}"></i>
+                        <span>${category.name}</span>
+                    </div>
+                </div>
+                
+                <div class="edit-category-actions">
+                    <button type="button" class="cancel-btn" onclick="closeEditCategoryModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="save-category-btn" id="updateCategoryBtn">
+                        Atualizar Categoria
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focar no primeiro campo
+    setTimeout(() => {
+        const nameInput = document.getElementById('editCategoryName');
+        nameInput.focus();
+        
+        // Permitir salvar com Enter
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCategory(e, category.id);
+            }
+        });
+        
+        // Permitir navegar entre campos com Tab
+        const iconInput = document.getElementById('editCategoryIcon');
+        const colorInput = document.getElementById('editCategoryColor');
+        
+        iconInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCategory(e, category.id);
+            }
+        });
+        
+        colorInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCategory(e, category.id);
+            }
+        });
+        
+        // Atualizar preview em tempo real
+        const updatePreview = () => {
+            const preview = document.getElementById('categoryPreview');
+            const previewIcon = preview.querySelector('i');
+            const previewText = preview.querySelector('span');
+            
+            previewIcon.className = iconInput.value;
+            previewIcon.style.color = colorInput.value;
+            previewText.textContent = nameInput.value;
+        };
+        
+        nameInput.addEventListener('input', updatePreview);
+        iconInput.addEventListener('input', updatePreview);
+        colorInput.addEventListener('input', updatePreview);
+    }, 100);
+}
+
+// Função para fechar modal de editar categoria
+function closeEditCategoryModal() {
+    const modal = document.getElementById('editCategoryModal');
+    if (modal) {
+        document.body.removeChild(modal);
+    }
+}
+
+// Função para atualizar categoria
+async function updateCategory(event, categoryId) {
+    event.preventDefault();
+    
+    const nameInput = document.getElementById('editCategoryName');
+    const iconInput = document.getElementById('editCategoryIcon');
+    const colorInput = document.getElementById('editCategoryColor');
+    const updateBtn = document.getElementById('updateCategoryBtn');
+    
+    const name = nameInput.value.trim();
+    const icon = iconInput.value.trim();
+    const color = colorInput.value.trim();
+    
+    // Validação básica
+    if (!name || !icon || !color) {
+        showNotification('❌ Todos os campos são obrigatórios!', 'error');
+        return;
+    }
+    
+    // Verificar se houve mudanças
+    const originalCategory = categories.find(cat => cat.id === categoryId);
+    if (!originalCategory) {
+        showNotification('❌ Categoria não encontrada!', 'error');
+        return;
+    }
+    
+    const hasChanges = name !== originalCategory.name || 
+                      icon !== originalCategory.icon || 
+                      color !== originalCategory.color;
+    
+    if (!hasChanges) {
+        showNotification('ℹ️ Nenhuma alteração foi feita!', 'info');
+        closeEditCategoryModal();
+        return;
+    }
+    
+    // Se o nome mudou, verificar se já existe uma categoria com esse nome
+    if (name !== originalCategory.name) {
+        const existingCategory = categories.find(cat => cat.name === name && cat.id !== categoryId);
+        if (existingCategory) {
+            showNotification('❌ Já existe uma categoria com esse nome!', 'error');
+            return;
+        }
+    }
+    
+    // Desabilitar botão durante a atualização
+    updateBtn.disabled = true;
+    updateBtn.textContent = 'Atualizando...';
+    
+    try {
+        if (!supabase) {
+            throw new Error('Cliente Supabase não inicializado');
+        }
+        
+        showNotification('🔄 Atualizando categoria...', 'info');
+        
+        // Atualizar categoria no Supabase
+        const { data, error } = await supabase
+            .from('category')
+            .update({
+                name: name,
+                icon: icon,
+                color: color
+            })
+            .eq('id', categoryId)
+            .select();
+        
+        if (error) {
+            throw error;
+        }
+        
+        if (data && data.length > 0) {
+            const updatedCategory = data[0];
+            
+            // Atualizar na lista local
+            const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
+            if (categoryIndex !== -1) {
+                categories[categoryIndex] = updatedCategory;
+                
+                // Reordenar por nome
+                categories.sort((a, b) => a.name.localeCompare(b.name));
+                
+                // Re-renderizar categorias
+                renderCategories();
+                
+                // Fechar modal
+                closeEditCategoryModal();
+                
+                showNotification(`✅ Categoria "${name}" atualizada com sucesso!`, 'success');
+                
+                // Se houver produtos filtrados por esta categoria, atualizar a exibição
+                const currentlySelectedCategory = getCurrentlySelectedCategory();
+                if (currentlySelectedCategory && currentlySelectedCategory.id === categoryId) {
+                    // Atualizar nome da categoria nos produtos filtrados
+                    filteredProducts.forEach(product => {
+                        if (product.categoryId === categoryId) {
+                            product.category = name;
+                        }
+                    });
+                    renderProducts();
+                }
+            } else {
+                throw new Error('Categoria não encontrada na lista local');
+            }
+        } else {
+            throw new Error('Nenhum dado retornado do Supabase');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao atualizar categoria:', error);
+        showNotification(`❌ Erro ao atualizar categoria: ${error.message}`, 'error');
+    } finally {
+        // Reabilitar botão
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'Atualizar Categoria';
+    }
 }
 
 // Adicionar botões de desenvolvimento ao footer (remover em produção)
