@@ -240,17 +240,57 @@ function renderCategories() {
     categories.forEach(category => {
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
+        categoryCard.dataset.categoryId = category.id;
         
         // Usar os dados do Supabase (icon e color)
         const iconClass = category.icon || 'fas fa-bread-slice';
         const iconColor = category.color || '#8B4513';
         
+        // Detectar se é dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const editHint = isMobile ? 'Duplo-toque para editar' : 'Duplo-clique para editar';
+        
         categoryCard.innerHTML = `
             <i class="${iconClass}" style="color: ${iconColor}"></i>
             <h3>${category.name}</h3>
+            <div class="category-edit-hint">${editHint}</div>
         `;
         
+        // Adicionar event listeners para click (filtro) e double-click (edição)
         categoryCard.addEventListener('click', () => filterByCategory(category.name));
+        
+        // Adicionar double-click para edição
+        categoryCard.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Feedback visual
+            categoryCard.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                categoryCard.style.transform = 'scale(1)';
+            }, 150);
+            showEditCategoryModal(category);
+        });
+        
+        // Adicionar suporte para double-tap em dispositivos móveis
+        let lastTap = 0;
+        categoryCard.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 500 && tapLength > 0) {
+                // Double-tap detectado
+                e.preventDefault();
+                e.stopPropagation();
+                // Feedback visual
+                categoryCard.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    categoryCard.style.transform = 'scale(1)';
+                }, 150);
+                showEditCategoryModal(category);
+            }
+            lastTap = currentTime;
+        });
+        
         categoriesGrid.appendChild(categoryCard);
     });
 }
@@ -324,10 +364,15 @@ function closeAddCategoryModal() {
 // Event listener para fechar modal ao clicar fora
 document.addEventListener('click', function(event) {
     const categoryModal = document.getElementById('addCategoryModal');
+    const editCategoryModal = document.getElementById('editCategoryModal');
     const productModal = document.getElementById('addProductModal');
     
     if (categoryModal && event.target === categoryModal) {
         closeAddCategoryModal();
+    }
+    
+    if (editCategoryModal && event.target === editCategoryModal) {
+        closeEditCategoryModal();
     }
     
     if (productModal && event.target === productModal) {
@@ -339,9 +384,13 @@ document.addEventListener('click', function(event) {
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         const categoryModal = document.getElementById('addCategoryModal');
+        const editCategoryModal = document.getElementById('editCategoryModal');
         const productModal = document.getElementById('addProductModal');
         if (categoryModal) {
             closeAddCategoryModal();
+        }
+        if (editCategoryModal) {
+            closeEditCategoryModal();
         }
         if (productModal) {
             closeAddProductModal();
@@ -924,6 +973,20 @@ style.textContent = `
         background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
     }
     
+    .category-edit-hint {
+        font-size: 0.75rem;
+        color: #888;
+        text-align: center;
+        margin-top: 8px;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+    }
+    
+    .category-card:hover .category-edit-hint {
+        opacity: 1;
+        color: #667eea;
+    }
+    
     .product-category {
         color: #666;
         font-size: 0.9rem;
@@ -1197,6 +1260,240 @@ function finalizeSale() {
     closeCheckoutModal();
     updateFooter();
     renderProducts();
+}
+
+// Função para mostrar modal de editar categoria
+function showEditCategoryModal(category) {
+    const modal = document.createElement('div');
+    modal.className = 'edit-category-modal';
+    modal.id = 'editCategoryModal';
+    
+    modal.innerHTML = `
+        <div class="edit-category-modal-content">
+            <div class="edit-category-header">
+                <h2>✏️ Editar Categoria</h2>
+                <button class="close-edit-category-btn" onclick="closeEditCategoryModal()">×</button>
+            </div>
+            
+            <form class="edit-category-form" onsubmit="updateCategory(event, ${category.id})">
+                <div class="form-group">
+                    <label for="editCategoryName">Nome da Categoria:</label>
+                    <input type="text" id="editCategoryName" value="${category.name}" placeholder="Ex: Bebidas Quentes" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategoryIcon">Ícone (FontAwesome):</label>
+                    <input type="text" id="editCategoryIcon" value="${category.icon}" placeholder="Ex: fa fa-house" required>
+                    <div class="input-help">
+                        Sugestão: "fa fa-house" | 
+                        <a href="https://fontawesome.com/search?ic=free&o=r" target="_blank" rel="noopener">
+                            Consultar ícones disponíveis
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategoryColor">Cor:</label>
+                    <input type="text" id="editCategoryColor" value="${category.color}" placeholder="Ex: blue" required>
+                    <div class="input-help">
+                        Sugestão: "blue", "red", "green", "#FF6B6B", etc.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Preview:</label>
+                    <div class="category-preview" id="categoryPreview">
+                        <i class="${category.icon}" style="color: ${category.color}"></i>
+                        <span>${category.name}</span>
+                    </div>
+                </div>
+                
+                <div class="edit-category-actions">
+                    <button type="button" class="cancel-btn" onclick="closeEditCategoryModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="save-category-btn" id="updateCategoryBtn">
+                        Atualizar Categoria
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focar no primeiro campo
+    setTimeout(() => {
+        const nameInput = document.getElementById('editCategoryName');
+        nameInput.focus();
+        
+        // Permitir salvar com Enter
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCategory(e, category.id);
+            }
+        });
+        
+        // Permitir navegar entre campos com Tab
+        const iconInput = document.getElementById('editCategoryIcon');
+        const colorInput = document.getElementById('editCategoryColor');
+        
+        iconInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCategory(e, category.id);
+            }
+        });
+        
+        colorInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCategory(e, category.id);
+            }
+        });
+        
+        // Atualizar preview em tempo real
+        const updatePreview = () => {
+            const preview = document.getElementById('categoryPreview');
+            const previewIcon = preview.querySelector('i');
+            const previewText = preview.querySelector('span');
+            
+            previewIcon.className = iconInput.value;
+            previewIcon.style.color = colorInput.value;
+            previewText.textContent = nameInput.value;
+        };
+        
+        nameInput.addEventListener('input', updatePreview);
+        iconInput.addEventListener('input', updatePreview);
+        colorInput.addEventListener('input', updatePreview);
+    }, 100);
+}
+
+// Função para fechar modal de editar categoria
+function closeEditCategoryModal() {
+    const modal = document.getElementById('editCategoryModal');
+    if (modal) {
+        document.body.removeChild(modal);
+    }
+}
+
+// Função para atualizar categoria
+async function updateCategory(event, categoryId) {
+    event.preventDefault();
+    
+    const nameInput = document.getElementById('editCategoryName');
+    const iconInput = document.getElementById('editCategoryIcon');
+    const colorInput = document.getElementById('editCategoryColor');
+    const updateBtn = document.getElementById('updateCategoryBtn');
+    
+    const name = nameInput.value.trim();
+    const icon = iconInput.value.trim();
+    const color = colorInput.value.trim();
+    
+    // Validação básica
+    if (!name || !icon || !color) {
+        showNotification('❌ Todos os campos são obrigatórios!', 'error');
+        return;
+    }
+    
+    // Verificar se houve mudanças
+    const originalCategory = categories.find(cat => cat.id === categoryId);
+    if (!originalCategory) {
+        showNotification('❌ Categoria não encontrada!', 'error');
+        return;
+    }
+    
+    const hasChanges = name !== originalCategory.name || 
+                      icon !== originalCategory.icon || 
+                      color !== originalCategory.color;
+    
+    if (!hasChanges) {
+        showNotification('ℹ️ Nenhuma alteração foi feita!', 'info');
+        closeEditCategoryModal();
+        return;
+    }
+    
+    // Se o nome mudou, verificar se já existe uma categoria com esse nome
+    if (name !== originalCategory.name) {
+        const existingCategory = categories.find(cat => cat.name === name && cat.id !== categoryId);
+        if (existingCategory) {
+            showNotification('❌ Já existe uma categoria com esse nome!', 'error');
+            return;
+        }
+    }
+    
+    // Desabilitar botão durante a atualização
+    updateBtn.disabled = true;
+    updateBtn.textContent = 'Atualizando...';
+    
+    try {
+        if (!supabase) {
+            throw new Error('Cliente Supabase não inicializado');
+        }
+        
+        showNotification('🔄 Atualizando categoria...', 'info');
+        
+        // Atualizar categoria no Supabase
+        const { data, error } = await supabase
+            .from('category')
+            .update({
+                name: name,
+                icon: icon,
+                color: color
+            })
+            .eq('id', categoryId)
+            .select();
+        
+        if (error) {
+            throw error;
+        }
+        
+        if (data && data.length > 0) {
+            const updatedCategory = data[0];
+            
+            // Atualizar na lista local
+            const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
+            if (categoryIndex !== -1) {
+                categories[categoryIndex] = updatedCategory;
+                
+                // Reordenar por nome
+                categories.sort((a, b) => a.name.localeCompare(b.name));
+                
+                // Re-renderizar categorias
+                renderCategories();
+                
+                // Fechar modal
+                closeEditCategoryModal();
+                
+                showNotification(`✅ Categoria "${name}" atualizada com sucesso!`, 'success');
+                
+                // Se houver produtos filtrados por esta categoria, atualizar a exibição
+                const currentlySelectedCategory = getCurrentlySelectedCategory();
+                if (currentlySelectedCategory && currentlySelectedCategory.id === categoryId) {
+                    // Atualizar nome da categoria nos produtos filtrados
+                    filteredProducts.forEach(product => {
+                        if (product.categoryId === categoryId) {
+                            product.category = name;
+                        }
+                    });
+                    renderProducts();
+                }
+            } else {
+                throw new Error('Categoria não encontrada na lista local');
+            }
+        } else {
+            throw new Error('Nenhum dado retornado do Supabase');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao atualizar categoria:', error);
+        showNotification(`❌ Erro ao atualizar categoria: ${error.message}`, 'error');
+    } finally {
+        // Reabilitar botão
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'Atualizar Categoria';
+    }
 }
 
 // Adicionar botões de desenvolvimento ao footer (remover em produção)
