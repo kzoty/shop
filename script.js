@@ -590,49 +590,30 @@ function renderCategories() {
         const iconClass = category.icon || 'fas fa-bread-slice';
         const iconColor = category.color || '#8B4513';
         
-        // Detectar se é dispositivo móvel
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const editHint = isMobile ? 'Duplo-toque para editar' : 'Duplo-clique para editar';
+
+
         
         categoryCard.innerHTML = `
+            <button class="card-edit-btn" title="Editar" type="button">
+                <i class="fas fa-pen"></i>
+            </button>
             <i class="${iconClass}" style="color: ${iconColor}"></i>
             <h3>${category.name}</h3>
-            <div class="category-edit-hint">${editHint}</div>
+
         `;
         
-        // Adicionar event listeners para click (filtro) e double-click (edição)
+        // Adicionar event listener para click (filtro)
         categoryCard.addEventListener('click', () => filterByCategory(category.name));
-        
-        // Adicionar double-click para edição
-        categoryCard.addEventListener('dblclick', (e) => {
+
+        // Botão de edição (dblclick/double-tap apenas no ícone)
+        const editBtn = categoryCard.querySelector('.card-edit-btn');
+        editBtn.addEventListener('dblclick', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            // Feedback visual
-            categoryCard.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                categoryCard.style.transform = 'scale(1)';
-            }, 150);
             showEditCategoryModal(category);
         });
-        
-        // Adicionar suporte para double-tap em dispositivos móveis
-        let lastTap = 0;
-        categoryCard.addEventListener('touchend', (e) => {
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
-            
-            if (tapLength < 500 && tapLength > 0) {
-                // Double-tap detectado
-                e.preventDefault();
-                e.stopPropagation();
-                // Feedback visual
-                categoryCard.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    categoryCard.style.transform = 'scale(1)';
-                }, 150);
-                showEditCategoryModal(category);
-            }
-            lastTap = currentTime;
+        attachDoubleTap(editBtn, (e) => {
+            showEditCategoryModal(category);
         });
         
         categoriesGrid.appendChild(categoryCard);
@@ -1095,6 +1076,9 @@ function renderProducts() {
         const quantity = cartItem ? cartItem.quantity : 0;
         
         productCard.innerHTML = `
+            <button class="card-edit-btn" title="Editar" type="button">
+                <i class="fas fa-pen"></i>
+            </button>
             <div class="product-image">
                 <i class="${product.icon}"></i>
             </div>
@@ -1111,30 +1095,17 @@ function renderProducts() {
             </div>
         `;
 
-        // Duplo‑clique (desktop) para editar
-        productCard.addEventListener('dblclick', (e) => {
+        // Botão de edição (dblclick/double-tap apenas no botão)
+        const editBtn = productCard.querySelector('.card-edit-btn');
+        editBtn.addEventListener('dblclick', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            productCard.style.transform = 'scale(0.98)';
-            setTimeout(() => { productCard.style.transform = 'scale(1)'; }, 120);
             const fullProduct = products.find(p => p.id === product.id);
             if (fullProduct) showEditProductModal(fullProduct);
         });
-
-        // Double‑tap (mobile)
-        let lastTap = 0;
-        productCard.addEventListener('touchend', (e) => {
-            const now = Date.now();
-            const delta = now - lastTap;
-            if (delta > 0 && delta < 500) {
-                e.preventDefault();
-                e.stopPropagation();
-                productCard.style.transform = 'scale(0.98)';
-                setTimeout(() => { productCard.style.transform = 'scale(1)'; }, 120);
-                const fullProduct = products.find(p => p.id === product.id);
-                if (fullProduct) showEditProductModal(fullProduct);
-            }
-            lastTap = now;
+        attachDoubleTap(editBtn, () => {
+            const fullProduct = products.find(p => p.id === product.id);
+            if (fullProduct) showEditProductModal(fullProduct);
         });
         
         productsGrid.appendChild(productCard);
@@ -1375,6 +1346,58 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Helper: detectar double‑tap em mobile com prevenção de click fantasma
+function attachDoubleTap(element, callback, threshold = 300) {
+    let lastTouchTime = 0;
+    let touchTimeout = null;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    const clear = () => {
+        if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+        }
+    };
+
+    element.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) return; // ignorar multi-touch
+        const t = e.changedTouches[0];
+        lastTouchX = t.clientX;
+        lastTouchY = t.clientY;
+    }, { passive: true });
+
+    element.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        const delta = now - lastTouchTime;
+        lastTouchTime = now;
+
+        // Impedir clique fantasma após touch
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (delta > 0 && delta <= threshold) {
+            clear();
+            callback(e);
+        } else {
+            clear();
+            // janela para possível segundo toque
+            touchTimeout = setTimeout(() => {
+                clear();
+            }, threshold);
+        }
+    });
+
+    // Bloquear click gerado por touch em alguns navegadores
+    element.addEventListener('click', (e) => {
+        // se veio logo após um touchend recente, cancelar
+        if (Date.now() - lastTouchTime < 350) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
+}
 
 // Função para limpar carrinho (para desenvolvimento)
 function clearCart() {
@@ -2070,22 +2093,10 @@ document.addEventListener('DOMContentLoaded', function() {
         font-size: 0.9rem;
     `;
     
-    const reloadBtn = document.createElement('button');
-    reloadBtn.textContent = '🔄 Recarregar Categorias';
-    reloadBtn.onclick = reloadCategories;
-    reloadBtn.style.cssText = `
-        padding: 8px 16px;
-        background: #3498db;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 0.9rem;
-    `;
+
     
     devButtons.appendChild(clearBtn);
     devButtons.appendChild(checkoutBtn);
-    devButtons.appendChild(reloadBtn);
     footer.appendChild(devButtons);
 });
 
