@@ -20,6 +20,15 @@ let todaySales = null;
 const BASE_PATH = window.location.pathname.split('/').slice(0, -1).join('/') + '/';
 console.log('Base path detectado:', BASE_PATH);
 
+// Função para converter UTC para horário local (UTC-3 - Brasília)
+function convertToLocalTime(utcDateString) {
+    const utcDate = new Date(utcDateString);
+    // Subtrair 3 horas para converter UTC para UTC-3 (Brasília)
+    // Nota: getTimezoneOffset() retorna diferença em minutos, então convertemos
+    const localDate = new Date(utcDate.getTime() - (3 * 60 * 60 * 1000));
+    return localDate;
+}
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', async function() {
     // Inicializar Supabase primeiro
@@ -186,9 +195,10 @@ function renderSales() {
         saleCard.className = 'sale-card';
         saleCard.onclick = () => showSaleDetails(sale);
 
-        const saleDate = new Date(sale.created_at);
-        const formattedDate = saleDate.toLocaleDateString('pt-BR');
-        const formattedTime = saleDate.toLocaleTimeString('pt-BR', {
+        // Usar horário local convertido
+        const localDate = convertToLocalTime(sale.created_at);
+        const formattedDate = localDate.toLocaleDateString('pt-BR');
+        const formattedTime = localDate.toLocaleTimeString('pt-BR', {
             hour: '2-digit',
             minute: '2-digit'
         });
@@ -268,12 +278,13 @@ function updateStatistics() {
     const total = filteredSales.length;
     const revenue = filteredSales.reduce((sum, sale) => sum + sale.total_value, 0);
 
-    // Vendas de hoje
-    const today = new Date();
+    // Vendas de hoje - usando horário local
+    const today = convertToLocalTime(new Date().toISOString());
     const todayString = today.toISOString().split('T')[0];
     const todayCount = allSales.filter(sale => {
-        const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
-        return saleDate === todayString;
+        const localSaleDate = convertToLocalTime(sale.created_at);
+        const saleDateString = localSaleDate.toISOString().split('T')[0];
+        return saleDateString === todayString;
     }).length;
 
     if (totalSales) totalSales.textContent = total;
@@ -291,8 +302,10 @@ function filterSales() {
         filteredSales = [...allSales];
     } else {
         filteredSales = allSales.filter(sale => {
-            const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
-            return saleDate === selectedDate;
+            // Usar horário local para comparação
+            const localSaleDate = convertToLocalTime(sale.created_at);
+            const saleDateString = localSaleDate.toISOString().split('T')[0];
+            return saleDateString === selectedDate;
         });
     }
 
@@ -317,9 +330,10 @@ function showSaleDetails(sale) {
 
     if (!modal || !body) return;
 
-    const saleDate = new Date(sale.created_at);
-    const formattedDate = saleDate.toLocaleDateString('pt-BR');
-    const formattedTime = saleDate.toLocaleTimeString('pt-BR', {
+    // Usar horário local convertido
+    const localDate = convertToLocalTime(sale.created_at);
+    const formattedDate = localDate.toLocaleDateString('pt-BR');
+    const formattedTime = localDate.toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit'
     });
