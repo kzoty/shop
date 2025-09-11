@@ -1,0 +1,1 @@
+INSERT INTO "public"."sales" ("id", "created_at", "total_value", "payment_method") VALUES ('5ea51bf1-e2d4-4381-9252-5d6c51e45f44', '2025-09-04 21:22:20.986237', '53', 'credito'), ('8da33478-a18b-4af3-a282-af6e5ed2e757', '2025-09-04 20:52:48.80045', '45', 'credito'), ('f86d1d27-f783-4986-9195-7061d3b0fc3b', '2025-09-04 20:40:46.763195', '35', 'credito');
