@@ -170,7 +170,7 @@ dataStore.importData(jsonString)
 ## Estrutura de Arquivos do Projeto
 
 ```
-/shop2/
+/shop/
 ├── index.html          # UI principal
 ├── styles.css          # Estilos
 ├── script.js           # Lógica principal (SEM Supabase)

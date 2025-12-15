@@ -41,7 +41,7 @@
 
 ## Notas de Correção Aplicadas:
 - Removidos dados hardcoded de getDefaultData()
-- Corrigidos caminhos /shop2 → /
+- Corrigidos caminhos /shop → /
 - Removido código obsoleto de Supabase
 - Adicionada inicialização de elementos DOM
 - Adicionado método updateLastLogin em dataStore
