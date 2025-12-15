@@ -152,7 +152,13 @@ function loadProductsFromLocalStorage() {
             price: Number(product.price),
             category_id: product.category_id
         }));
-        
+        // Ordenar produtos por nome (locale pt-BR)
+        try {
+            products.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+        } catch (e) {
+            products.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+        }
+
         filteredProducts = [...products];
         console.log('Produtos carregados do localStorage:', products);
     } catch (error) {
@@ -165,7 +171,14 @@ function renderCategories() {
     if (!categoriesGrid) return;
     
     categoriesGrid.innerHTML = '';
-    
+    // Ordenar categorias alfabeticamente por nome (locale pt-BR)
+    try {
+        categories.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+    } catch (e) {
+        // Fallback simples
+        categories.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+    }
+
     categories.forEach(category => {
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
@@ -368,8 +381,12 @@ async function saveNewCategory(event) {
         // Adicionar à lista local
         categories.push(newCategory);
         
-        // Reordenar por nome
-        categories.sort((a, b) => a.name.localeCompare(b.name));
+        // Reordenar por nome (locale pt-BR)
+        try {
+            categories.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+        } catch (e) {
+            categories.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+        }
         
         // Salvar no dataStore (localStorage + data.json)
         const data = dataStore.getData();
@@ -529,8 +546,12 @@ async function saveNewProduct(event) {
         // Adicionar à lista local
         products.push(newProduct);
         
-        // Reordenar por nome
-        products.sort((a, b) => a.name.localeCompare(b.name));
+        // Reordenar por nome (locale pt-BR)
+        try {
+            products.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+        } catch (e) {
+            products.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+        }
         
         // Salvar no dataStore (localStorage + data.json)
         const data = dataStore.getData();
@@ -627,7 +648,13 @@ function showLoadingStatus(message) {
 // Renderizar produtos
 function renderProducts() {
     productsGrid.innerHTML = '';
-    
+    // Garantir que os produtos filtrados estejam ordenados alfabeticamente
+    try {
+        filteredProducts.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+    } catch (e) {
+        filteredProducts.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+    }
+
     filteredProducts.forEach(product => {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
@@ -1797,8 +1824,12 @@ async function updateCategory(event, categoryId) {
             categories[categoryIndex].icon = icon;
             categories[categoryIndex].color = color;
             
-            // Reordenar por nome
-            categories.sort((a, b) => a.name.localeCompare(b.name));
+            // Reordenar por nome (locale pt-BR)
+            try {
+                categories.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+            } catch (e) {
+                categories.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+            }
             
             // Salvar no dataStore
             const data = dataStore.getData();
@@ -1946,7 +1977,13 @@ async function updateProduct(event, productId) {
             products[idx].name = name;
             products[idx].price = price;
             products[idx].category_id = categoryId;
-            
+            // Reordenar por nome (locale pt-BR)
+            try {
+                products.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+            } catch (e) {
+                products.sort((a, b) => (a.name || '').toString().localeCompare((b.name || '').toString()));
+            }
+
             // Salvar no dataStore
             const data = dataStore.getData();
             data.products = products;
