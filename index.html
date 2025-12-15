@@ -16,8 +16,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
 
     <!-- Link para manifest -->
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/android-launchericon-192-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="android-launchericon-192-192.png">
 
     <!-- Para evitar zoom indesejado em inputs -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -131,7 +131,7 @@
                 const canRegister = (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
                 if (canRegister) {
                     window.addEventListener('load', function() {
-                        navigator.serviceWorker.register('/sw.js').catch(err => console.warn('ServiceWorker registration failed:', err));
+                        navigator.serviceWorker.register('sw.js').catch(err => console.warn('ServiceWorker registration failed:', err));
                     });
                 } else {
                     console.warn('ServiceWorker not registered: unsupported origin/protocol', location.protocol, location.hostname);

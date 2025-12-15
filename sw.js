@@ -1,5 +1,22 @@
 const CACHE_NAME = 'padaria-pdv-v1';
-const BASE_PATH = '/';
+
+// Compute base path dynamically from the service worker's location so
+// caching works when the app is hosted under a subpath (e.g. /shop/)
+const BASE_PATH = (function() {
+  try {
+    const p = self.location.pathname || '/';
+    // If the path ends with the service worker filename, strip it to get the directory
+    if (p.endsWith('/sw.js')) {
+      return p.substring(0, p.lastIndexOf('/') + 1);
+    }
+    // If the path ends with a slash, use it as-is
+    if (p.endsWith('/')) return p;
+    // Fallback: take directory portion
+    return p.substring(0, p.lastIndexOf('/') + 1) || '/';
+  } catch (e) {
+    return '/';
+  }
+})();
 
 const urlsToCache = [
   BASE_PATH,
@@ -25,34 +42,37 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-  // Só cachear requisições do nosso domínio
-  if (event.request.url.startsWith('https://kzoty.github.io')) {
-    event.respondWith(
-      caches.match(event.request)
-        .then(function(response) {
-          // Retorna do cache se encontrou, senão faz fetch
-          if (response) {
-            return response;
-          }
-          return fetch(event.request).then(function(response) {
-            // Não cachear respostas que não sejam bem-sucedidas
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+  // Só cachear requisições do mesmo origin (nosso domínio)
+  try {
+    const reqUrl = new URL(event.request.url);
+    if (reqUrl.origin === self.location.origin) {
+      event.respondWith(
+        caches.match(event.request)
+          .then(function(response) {
+            // Retorna do cache se encontrou, senão faz fetch
+            if (response) {
               return response;
             }
-            
-            // Clona a resposta para cachear
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, responseToCache);
-              });
-            
-            return response;
-          });
-        })
-    );
-  } else {
-    // Para requisições externas, apenas fetch
-    event.respondWith(fetch(event.request));
+            return fetch(event.request).then(function(response) {
+              // Não cachear respostas que não sejam bem-sucedidas
+              if (!response || response.status !== 200 || response.type !== 'basic') {
+                return response;
+              }
+              // Clona a resposta para cachear
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME)
+                .then(function(cache) {
+                  cache.put(event.request, responseToCache);
+                });
+              return response;
+            });
+          })
+      );
+      return;
+    }
+  } catch (e) {
+    // If URL parsing fails, fall back to network
   }
+  // Para requisições externas, apenas fetch
+  event.respondWith(fetch(event.request));
 });
