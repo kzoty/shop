@@ -271,7 +271,9 @@ function addUserInfoToHeader() {
         </div>
         <button class="export-btn" onclick="exportDataAsJSON()" title="Exportar dados como JSON">
             <i class="fas fa-download"></i>
-            Export
+        </button>
+        <button class="icon-btn clear-site-btn" onclick="clearSiteData()" title="Limpar cache, SW e localStorage">
+            <i class="fas fa-broom"></i>
         </button>
         <button class="logout-btn" onclick="handleLogout()">
             <i class="fas fa-sign-out-alt"></i>
@@ -279,3 +281,38 @@ function addUserInfoToHeader() {
         </button>
     `;
 }
+
+// Função para limpar cache, service workers e localStorage (disponível globalmente)
+window.clearSiteData = async function() {
+    if (!confirm('Tem certeza? Isso irá limpar localStorage, caches e desregistrar Service Workers para este site.')) return;
+    try {
+        // Unregister service workers
+        if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister()));
+            console.log('[clearSiteData] Service workers unregistered');
+        }
+
+        // Clear Cache Storage
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+            console.log('[clearSiteData] Cache storage cleared');
+        }
+
+        // Clear localStorage
+        localStorage.clear();
+        console.log('[clearSiteData] localStorage cleared');
+
+        if (typeof showNotification === 'function') {
+            showNotification('Dados do site limpos. Recarregando...', 'info');
+        } else {
+            console.info('Dados do site limpos. Recarregando...');
+        }
+
+        setTimeout(() => location.reload(), 600);
+    } catch (err) {
+        console.error('[clearSiteData] Erro ao limpar dados:', err);
+        alert('Erro ao limpar dados: ' + err.message);
+    }
+};

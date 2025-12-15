@@ -6,7 +6,17 @@
 class DataStore {
     constructor() {
         this.storageKey = 'padaria_pdv_data';
-        this.dataJsonUrl = '/data.json'; // Caminho para arquivo JSON
+        // Calcular caminho dinâmico para data.json baseado no caminho base da aplicação.
+        // Isso evita usar um caminho absoluto '/' que quebra em GitHub Pages com repositórios em subpaths.
+        try {
+            const path = window.location.pathname;
+            const base = path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
+            this.dataJsonUrl = base + 'data.json';
+            console.log('[DataStore] dataJsonUrl set to', this.dataJsonUrl);
+        } catch (e) {
+            // Fallback para root
+            this.dataJsonUrl = '/data.json';
+        }
         this.data = null;
         this.initialized = false;
     }
