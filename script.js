@@ -758,10 +758,13 @@ function handleSearch() {
         if (clearSearchBtn) {
             clearSearchBtn.style.display = 'flex';
         }
-        filteredProducts = products.filter(product => 
-            product.name.toLowerCase().includes(searchTerm) ||
-            product.category.toLowerCase().includes(searchTerm)
-        );
+        // Filtrar produtos pelo nome ou pelo nome da categoria (lookup via category_id)
+        filteredProducts = products.filter(product => {
+            const pname = (product.name || '').toLowerCase();
+            const categoryObj = categories.find(c => c.id === product.category_id);
+            const cname = categoryObj && categoryObj.name ? categoryObj.name.toLowerCase() : '';
+            return pname.includes(searchTerm) || cname.includes(searchTerm);
+        });
     }
     
     renderProducts();

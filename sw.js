@@ -33,10 +33,18 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', function(event) {
+  // During install, attempt to cache core resources but don't fail install
+  // if a single resource is temporarily unavailable (robust for CI/dev).
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
-        return cache.addAll(urlsToCache);
+        return Promise.all(urlsToCache.map(url =>
+          cache.add(url).catch(err => {
+            // Log and continue; individual resource failures shouldn't block install
+            console.warn('sw: failed to cache', url, err && err.message);
+            return Promise.resolve();
+          })
+        ));
       })
   );
 });
@@ -47,32 +55,36 @@ self.addEventListener('fetch', function(event) {
     const reqUrl = new URL(event.request.url);
     if (reqUrl.origin === self.location.origin) {
       event.respondWith(
-        caches.match(event.request)
-          .then(function(response) {
-            // Retorna do cache se encontrou, senão faz fetch
-            if (response) {
-              return response;
+        caches.match(event.request).then(function(cachedResponse) {
+          // Try network in parallel but prefer cache if available
+          const networkPromise = fetch(event.request).then(function(networkResponse) {
+            // If response is ok, put a copy in cache
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, copy); });
             }
-            return fetch(event.request).then(function(response) {
-              // Não cachear respostas que não sejam bem-sucedidas
-              if (!response || response.status !== 200 || response.type !== 'basic') {
-                return response;
-              }
-              // Clona a resposta para cachear
-              const responseToCache = response.clone();
-              caches.open(CACHE_NAME)
-                .then(function(cache) {
-                  cache.put(event.request, responseToCache);
-                });
-              return response;
-            });
-          })
+            return networkResponse;
+          }).catch(function(err) {
+            // Network failed; we'll fall back to cache below
+            console.warn('sw: network fetch failed for', event.request.url, err && err.message);
+            return null;
+          });
+
+          // If cache present, return it immediately; otherwise wait for network or fallback
+          return cachedResponse || networkPromise.then(resp => resp || caches.match(BASE_PATH + 'index.html'));
+        })
       );
       return;
     }
   } catch (e) {
     // If URL parsing fails, fall back to network
   }
-  // Para requisições externas, apenas fetch
-  event.respondWith(fetch(event.request));
+
+  // For cross-origin requests or parsing failures, try network but catch errors
+  event.respondWith(
+    fetch(event.request).catch(function(err) {
+      console.warn('sw: cross-origin or network fetch failed for', event.request.url, err && err.message);
+      return caches.match(event.request) || caches.match(BASE_PATH + 'index.html');
+    })
+  );
 });
