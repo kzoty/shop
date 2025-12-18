@@ -4,7 +4,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Variáveis globais
 let supabase = null;
-let currentUser = null;
+/* currentUser vem de auth.js (global) */
 let allSales = []; // Todas as vendas carregadas
 let filteredSales = []; // Vendas filtradas
 
@@ -31,17 +31,26 @@ function convertToLocalTime(utcDateString) {
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async function() {
-    // Inicializar Supabase primeiro
-    await initializeSupabase();
+    // Inicializar autenticação local (mesma do index.html)
+    try {
+        if (typeof dataStore !== 'undefined' && !dataStore.initialized) {
+            await dataStore.initialize();
+        }
+        if (typeof initAuth === 'function') {
+            await initAuth(); // preenche currentUser do auth.js se houver sessão válida
+        }
+    } catch (e) {
+        console.warn('Falha ao inicializar autenticação local:', e);
+    }
 
-    // Verificar autenticação
-    await checkAuthStatus();
-
-    // Se não estiver autenticado, redirecionar para index
+    // Se não estiver autenticado pela auth local, redirecionar para index
     if (!currentUser) {
         window.location.href = 'index.html';
         return;
     }
+
+    // Inicializar Supabase (apenas para buscar dados)
+    await initializeSupabase();
 
     // Inicializar elementos DOM
     initializeDOMElements();
@@ -121,50 +130,67 @@ function initializeDOMElements() {
 
 // Carregar vendas do Supabase
 async function loadSales() {
+    showLoading(true);
     try {
-        if (!supabase) {
-            throw new Error('Cliente Supabase não inicializado');
-        }
+        // Preferir dados locais via dataStore
+        if (typeof dataStore !== 'undefined' && dataStore.initialized) {
+            const localSales = dataStore.getSales() || [];
+            allSales = localSales.map(sale => ({
+                ...sale,
+                sale_items: (dataStore.getSaleItems(sale.id) || [])
+            })).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-        console.log('Buscando vendas do Supabase...');
-        showLoading(true);
-
-        // Buscar vendas com itens relacionados
-        const { data: salesData, error: salesError } = await supabase
-            .from('sales')
-            .select(`
-                id,
-                total_value,
-                payment_method,
-                created_at,
-                sale_items (
-                    id,
-                    product_name,
-                    quantity,
-                    unit_price,
-                    subtotal,
-                    category_name
-                )
-            `)
-            .order('created_at', { ascending: false });
-
-        if (salesError) {
-            throw salesError;
-        }
-
-        if (salesData && salesData.length > 0) {
-            allSales = salesData;
             filteredSales = [...allSales];
-            console.log('Vendas carregadas do Supabase:', allSales);
-            renderSales();
-            updateStatistics();
-        } else {
-            console.log('Nenhuma venda encontrada');
-            showEmptyState();
+
+            if (allSales.length > 0) {
+                console.log('Vendas carregadas do dataStore:', allSales);
+                renderSales();
+                updateStatistics();
+            } else {
+                console.log('Nenhuma venda encontrada no dataStore');
+                showEmptyState();
+            }
+            return;
         }
 
+        // Fallback: tentar Supabase se disponível
+        if (supabase) {
+            console.log('Buscando vendas do Supabase (fallback)...');
+            const { data: salesData, error: salesError } = await supabase
+                .from('sales')
+                .select(`
+                    id,
+                    total_value,
+                    payment_method,
+                    created_at,
+                    sale_items (
+                        id,
+                        product_name,
+                        quantity,
+                        unit_price,
+                        subtotal,
+                        category_name
+                    )
+                `)
+                .order('created_at', { ascending: false });
+
+            if (salesError) throw salesError;
+
+            allSales = salesData || [];
+            filteredSales = [...allSales];
+            if (allSales.length > 0) {
+                renderSales();
+                updateStatistics();
+            } else {
+                showEmptyState();
+            }
+            return;
+        }
+
+        console.warn('Sem dataStore inicializado e Supabase indisponível');
+        showEmptyState();
     } catch (error) {
-        console.error('Erro ao carregar vendas:', error);
+        console.error('Erro ao carregar vendas (local/Supabase):', error);
         showNotification(`❌ Erro ao carregar vendas: ${error.message}`, 'error');
         showEmptyState();
     } finally {
