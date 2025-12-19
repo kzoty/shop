@@ -1,0 +1,609 @@
+{
+  "categories": [
+    {
+      "id": 2,
+      "name": "1 Baguetes",
+      "icon": "fa-solid fa-disease",
+      "color": "green",
+      "created_at": "2025-08-27T21:43:02.000Z"
+    },
+    {
+      "id": 1,
+      "name": "2 Levain",
+      "icon": "fa fa-bread-slice",
+      "color": "brown",
+      "created_at": "2025-08-27T21:42:39.000Z"
+    },
+    {
+      "id": 22,
+      "name": "3 Rolls",
+      "icon": "fa fa-circle-dot",
+      "color": "orange",
+      "created_at": "2025-08-29T18:43:52.000Z"
+    },
+    {
+      "id": 43,
+      "name": "4 Salgados/Doces",
+      "icon": "fa fa-cookie-bite",
+      "color": "pink",
+      "created_at": "2025-09-01T12:14:50.000Z"
+    },
+    {
+      "id": 41,
+      "name": "Bebidas frias",
+      "icon": "fa fa-wine-bottle",
+      "color": "blue",
+      "created_at": "2025-08-31T23:07:58.000Z"
+    },
+    {
+      "id": 40,
+      "name": "Bebidas quentes",
+      "icon": "fa fa-mug-hot",
+      "color": "red",
+      "created_at": "2025-08-31T23:07:08.000Z"
+    },
+    {
+      "id": 39,
+      "name": "Bolos",
+      "icon": "fa fa-cake-candles",
+      "color": "red",
+      "created_at": "2025-08-29T19:14:05.000Z"
+    },
+    {
+      "id": 46,
+      "name": "Folhados",
+      "icon": "fa fa-stroopwafel",
+      "color": "Orange",
+      "created_at": "2025-09-02T20:53:54.000Z"
+    },
+    {
+      "id": 44,
+      "name": "Geleias",
+      "icon": "fa-regular fa-gem",
+      "color": "green",
+      "created_at": "2025-09-01T12:21:42.000Z"
+    },
+    {
+      "id": 42,
+      "name": "Sanduiches Preparos",
+      "icon": "fa-solid fa-burger",
+      "color": "grey",
+      "created_at": "2025-09-01T12:13:23.000Z"
+    },
+    {
+      "id": 47,
+      "name": "Z especial",
+      "icon": "Hdj",
+      "color": "Blue",
+      "created_at": "2025-12-17T20:33:44.748Z"
+    }
+  ],
+  "products": [
+    {
+      "id": 27,
+      "name": "Agua coco",
+      "price": 10,
+      "category_id": 41
+    },
+    {
+      "id": 26,
+      "name": "Agua mineral",
+      "price": 6,
+      "category_id": 41
+    },
+    {
+      "id": 53,
+      "name": "Alfajor",
+      "price": 12,
+      "category_id": 43
+    },
+    {
+      "id": 3,
+      "name": "Azeitonas",
+      "price": 15,
+      "category_id": 2
+    },
+    {
+      "id": 19,
+      "name": "Banana Roll",
+      "price": 35,
+      "category_id": 22
+    },
+    {
+      "id": 55,
+      "name": "Bolo banana",
+      "price": 24,
+      "category_id": 39
+    },
+    {
+      "id": 24,
+      "name": "Brioches (3 pack)",
+      "price": 13,
+      "category_id": 43
+    },
+    {
+      "id": 31,
+      "name": "Cafe Medio com leite",
+      "price": 12,
+      "category_id": 40
+    },
+    {
+      "id": 12,
+      "name": "Cafe Medio Puro",
+      "price": 10,
+      "category_id": 40
+    },
+    {
+      "id": 39,
+      "name": "Cafe Pequeno",
+      "price": 9,
+      "category_id": 40
+    },
+    {
+      "id": 40,
+      "name": "Cafe Pingado Pequeno",
+      "price": 10,
+      "category_id": 40
+    },
+    {
+      "id": 2,
+      "name": "Calabresa",
+      "price": 15,
+      "category_id": 2
+    },
+    {
+      "id": 30,
+      "name": "Capuccino",
+      "price": 20,
+      "category_id": 40
+    },
+    {
+      "id": 15,
+      "name": "Cha",
+      "price": 12,
+      "category_id": 40
+    },
+    {
+      "id": 42,
+      "name": "Cha gelado",
+      "price": 12,
+      "category_id": 41
+    },
+    {
+      "id": 41,
+      "name": "Chocolate Quente",
+      "price": 23,
+      "category_id": 40
+    },
+    {
+      "id": 7,
+      "name": "ChocoRoll",
+      "price": 32,
+      "category_id": 22
+    },
+    {
+      "id": 9,
+      "name": "Coca ks",
+      "price": 10,
+      "category_id": 41
+    },
+    {
+      "id": 28,
+      "name": "Croissant",
+      "price": 14,
+      "category_id": 46
+    },
+    {
+      "id": 13,
+      "name": "Disco",
+      "price": 14,
+      "category_id": 43
+    },
+    {
+      "id": 38,
+      "name": "Disco com queijo",
+      "price": 17,
+      "category_id": 42
+    },
+    {
+      "id": 47,
+      "name": "Disco queijo",
+      "price": 17,
+      "category_id": 43
+    },
+    {
+      "id": 32,
+      "name": "Doce de leite",
+      "price": 42,
+      "category_id": 44
+    },
+    {
+      "id": 56,
+      "name": "Especial Choco laranja",
+      "category_id": 47,
+      "price": 65,
+      "created_at": "2025-12-17T20:34:02.831Z"
+    },
+    {
+      "id": 51,
+      "name": "Focaccia",
+      "price": 30,
+      "category_id": 43
+    },
+    {
+      "id": 29,
+      "name": "Folhado maçã",
+      "price": 20,
+      "category_id": 46
+    },
+    {
+      "id": 16,
+      "name": "Formigueiro",
+      "price": 24,
+      "category_id": 39
+    },
+    {
+      "id": 8,
+      "name": "Fuba",
+      "price": 24,
+      "category_id": 39
+    },
+    {
+      "id": 6,
+      "name": "Gerg. Integral",
+      "price": 28,
+      "category_id": 1
+    },
+    {
+      "id": 5,
+      "name": "Gergelim",
+      "price": 25,
+      "category_id": 1
+    },
+    {
+      "id": 20,
+      "name": "Gergelim / açafrão",
+      "price": 16,
+      "category_id": 2
+    },
+    {
+      "id": 18,
+      "name": "Goiabada",
+      "price": 32,
+      "category_id": 22
+    },
+    {
+      "id": 11,
+      "name": "Guarana organico KS",
+      "price": 13,
+      "category_id": 41
+    },
+    {
+      "id": 10,
+      "name": "Laranja",
+      "price": 26,
+      "category_id": 39
+    },
+    {
+      "id": 44,
+      "name": "Leite chocolate Kids",
+      "price": 16,
+      "category_id": 41
+    },
+    {
+      "id": 43,
+      "name": "Leite com chocolate frio",
+      "price": 18,
+      "category_id": 41
+    },
+    {
+      "id": 14,
+      "name": "Meia-lua Caponata",
+      "price": 15,
+      "category_id": 43
+    },
+    {
+      "id": 52,
+      "name": "Mel",
+      "price": 40,
+      "category_id": 44
+    },
+    {
+      "id": 45,
+      "name": "Pao sanduiche",
+      "price": 16,
+      "category_id": 2
+    },
+    {
+      "id": 34,
+      "name": "Petit au chocolate",
+      "price": 20,
+      "category_id": 42
+    },
+    {
+      "id": 33,
+      "name": "Petit sanduiche",
+      "price": 18,
+      "category_id": 42
+    },
+    {
+      "id": 22,
+      "name": "PROMO Int",
+      "price": 23,
+      "category_id": 1
+    },
+    {
+      "id": 21,
+      "name": "PROMO Trad",
+      "price": 20,
+      "category_id": 1
+    },
+    {
+      "id": 23,
+      "name": "Puff",
+      "price": 13,
+      "category_id": 43
+    },
+    {
+      "id": 46,
+      "name": "Puff Chocolate",
+      "price": 17,
+      "category_id": 43
+    },
+    {
+      "id": 37,
+      "name": "Puff queijo extra",
+      "price": 17,
+      "category_id": 42
+    },
+    {
+      "id": 48,
+      "name": "Roll Doce de leite",
+      "price": 35,
+      "category_id": 22
+    },
+    {
+      "id": 4,
+      "name": "Rustico",
+      "price": 25,
+      "category_id": 1
+    },
+    {
+      "id": 35,
+      "name": "Sanduiche Croissant",
+      "price": 28,
+      "category_id": 42
+    },
+    {
+      "id": 36,
+      "name": "Sanduiche Focaccia",
+      "price": 26,
+      "category_id": 42
+    },
+    {
+      "id": 25,
+      "name": "Sanduiche na baguete",
+      "price": 24,
+      "category_id": 42
+    },
+    {
+      "id": 17,
+      "name": "Susin grande",
+      "price": 38,
+      "category_id": 44
+    },
+    {
+      "id": 1,
+      "name": "Tradicional",
+      "price": 16,
+      "category_id": 2
+    }
+  ],
+  "sales": [
+    {
+      "id": "sale-1765881838766",
+      "created_at": "2025-12-16T10:43:58.771Z",
+      "total_value": 71,
+      "payment_method": "credito"
+    },
+    {
+      "id": "sale-1766004175716",
+      "created_at": "2025-12-17T20:42:55.720Z",
+      "total_value": 48,
+      "payment_method": "debito"
+    },
+    {
+      "id": "sale-1766004253069",
+      "created_at": "2025-12-17T20:44:13.069Z",
+      "total_value": 64,
+      "payment_method": "debito"
+    },
+    {
+      "id": "sale-1766078814882",
+      "created_at": "2025-12-18T17:26:54.886Z",
+      "total_value": 307,
+      "payment_method": "dinheiro"
+    }
+  ],
+  "sale_items": [
+    {
+      "id": "item-1765881838850",
+      "sale_id": "sale-1765881838766",
+      "category_id": 2,
+      "category_name": "1 Baguetes",
+      "product_id": 1,
+      "product_name": "Tradicional",
+      "quantity": 1,
+      "unit_price": 16,
+      "subtotal": 16
+    },
+    {
+      "id": "item-1765881838851",
+      "sale_id": "sale-1765881838766",
+      "category_id": 2,
+      "category_name": "1 Baguetes",
+      "product_id": 2,
+      "product_name": "Calabresa",
+      "quantity": 1,
+      "unit_price": 15,
+      "subtotal": 15
+    },
+    {
+      "id": "item-1765881838852",
+      "sale_id": "sale-1765881838766",
+      "category_id": 2,
+      "category_name": "1 Baguetes",
+      "product_id": 3,
+      "product_name": "Azeitonas",
+      "quantity": 1,
+      "unit_price": 15,
+      "subtotal": 15
+    },
+    {
+      "id": "item-1765881838852",
+      "sale_id": "sale-1765881838766",
+      "category_id": 1,
+      "category_name": "2 Levain",
+      "product_id": 4,
+      "product_name": "Rustico",
+      "quantity": 1,
+      "unit_price": 25,
+      "subtotal": 25
+    },
+    {
+      "id": "item-1766004175746",
+      "sale_id": "sale-1766004175716",
+      "category_id": 43,
+      "category_name": "4 Salgados/Doces",
+      "product_id": 23,
+      "product_name": "Puff",
+      "quantity": 1,
+      "unit_price": 13,
+      "subtotal": 13
+    },
+    {
+      "id": "item-1766004175747",
+      "sale_id": "sale-1766004175716",
+      "category_id": 41,
+      "category_name": "Bebidas frias",
+      "product_id": 9,
+      "product_name": "Coca ks",
+      "quantity": 1,
+      "unit_price": 10,
+      "subtotal": 10
+    },
+    {
+      "id": "item-1766004175749",
+      "sale_id": "sale-1766004175716",
+      "category_id": 1,
+      "category_name": "2 Levain",
+      "product_id": 4,
+      "product_name": "Rustico",
+      "quantity": 1,
+      "unit_price": 25,
+      "subtotal": 25
+    },
+    {
+      "id": "item-1766004253069",
+      "sale_id": "sale-1766004253069",
+      "category_id": 42,
+      "category_name": "Sanduiches Preparos",
+      "product_id": 36,
+      "product_name": "Sanduiche Focaccia",
+      "quantity": 1,
+      "unit_price": 26,
+      "subtotal": 26
+    },
+    {
+      "id": "item-1766004253070",
+      "sale_id": "sale-1766004253069",
+      "category_id": 40,
+      "category_name": "Bebidas quentes",
+      "product_id": 15,
+      "product_name": "Cha",
+      "quantity": 1,
+      "unit_price": 12,
+      "subtotal": 12
+    },
+    {
+      "id": "item-1766004253070",
+      "sale_id": "sale-1766004253069",
+      "category_id": 39,
+      "category_name": "Bolos",
+      "product_id": 10,
+      "product_name": "Laranja",
+      "quantity": 1,
+      "unit_price": 26,
+      "subtotal": 26
+    },
+    {
+      "id": "item-1766078814925",
+      "sale_id": "sale-1766078814882",
+      "category_id": 1,
+      "category_name": "2 Levain",
+      "product_id": 21,
+      "product_name": "PROMO Trad",
+      "quantity": 4,
+      "unit_price": 20,
+      "subtotal": 80
+    },
+    {
+      "id": "item-1766078814925",
+      "sale_id": "sale-1766078814882",
+      "category_id": 1,
+      "category_name": "2 Levain",
+      "product_id": 6,
+      "product_name": "Gerg. Integral",
+      "quantity": 2,
+      "unit_price": 28,
+      "subtotal": 56
+    },
+    {
+      "id": "item-1766078814926",
+      "sale_id": "sale-1766078814882",
+      "category_id": 1,
+      "category_name": "2 Levain",
+      "product_id": 4,
+      "product_name": "Rustico",
+      "quantity": 2,
+      "unit_price": 25,
+      "subtotal": 50
+    },
+    {
+      "id": "item-1766078814926",
+      "sale_id": "sale-1766078814882",
+      "category_id": 46,
+      "category_name": "Folhados",
+      "product_id": 28,
+      "product_name": "Croissant",
+      "quantity": 4,
+      "unit_price": 14,
+      "subtotal": 56
+    },
+    {
+      "id": "item-1766078814926",
+      "sale_id": "sale-1766078814882",
+      "category_id": 47,
+      "category_name": "Z especial",
+      "product_id": 56,
+      "product_name": "Especial Choco laranja",
+      "quantity": 1,
+      "unit_price": 65,
+      "subtotal": 65
+    }
+  ],
+  "authorized_users": [
+    {
+      "id": "77ccf5ff-fe74-41a7-b60d-195abc5d8f66",
+      "email": "paesartesanaisfloripa@gmail.com",
+      "name": "Administrador",
+      "role": "admin",
+      "is_active": true,
+      "created_at": "2025-09-01T18:25:44.000Z",
+      "last_login": "2025-12-15T22:03:00.448Z",
+      "password_hash": "0ca3bf40d89038be861f448402bc5362935d61e9143ab50ac40d4967b8f66ccd"
+    }
+  ],
+  "exported_at": "2025-12-19T18:53:13.854Z",
+  "exported_by": "paesartesanaisfloripa@gmail.com"
+}
