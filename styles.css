@@ -35,6 +35,21 @@ body {
     gap: 20px;
 }
 
+/* Wrapper para alinhar botão de menu + busca */
+.header-main-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+@media (min-width: 769px) {
+    .header-main-row {
+        width: auto;
+        flex: 1;
+    }
+}
+
 /* Botão de menu (hamburger) */
 .icon-btn {
     background: rgba(255, 255, 255, 0.12);
@@ -51,8 +66,21 @@ body {
     transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
+/* Ícone padrão branco (para header escuro) */
 .icon-btn i {
     font-size: 1.2rem;
+    color: inherit;
+}
+
+/* Botão fechar do menu lateral: fundo escuro e ícone claro para contraste no fundo branco do aside */
+#menuClose.icon-btn {
+    background: #2c3e50;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+#menuClose.icon-btn:hover {
+    background: #1f2933;
 }
 
 .icon-btn:hover {
@@ -484,9 +512,15 @@ body {
         flex-direction: column;
         text-align: center;
     }
+
+    /* Em telas pequenas, alinhar toggle + busca na mesma linha */
+    .header-main-row {
+        width: 100%;
+    }
     
     .search-container {
         max-width: 100%;
+        flex: 1;
     }
     
     .categories-grid {
