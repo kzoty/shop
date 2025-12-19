@@ -269,12 +269,7 @@ function addUserInfoToHeader() {
             <i class="fas fa-user-circle"></i>
             <span>${currentUser.name}</span>
         </div>
-        <button class="export-btn" onclick="exportDataAsJSON()" title="Exportar dados como JSON">
-            <i class="fas fa-download"></i>
-        </button>
-        <button class="icon-btn clear-site-btn" onclick="clearSiteData()" title="Limpar cache, SW e localStorage">
-            <i class="fas fa-broom"></i>
-        </button>
+        
         <button class="logout-btn" onclick="handleLogout()">
             <i class="fas fa-sign-out-alt"></i>
             Sair
